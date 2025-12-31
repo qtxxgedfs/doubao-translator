@@ -1,0 +1,77 @@
+"""
+Doubao Translator Utility
+
+A reusable Python module for interacting with Doubao's large language model API,
+specifically designed for text translation tasks. This module handles API configuration,
+client initialization, and provides a simple interface for translation requests.
+
+Environment setup requirements:
+- Create a .env file with your API credentials
+- Requires Python 3.8+ and specified dependencies
+
+Reference:
+- Volcengine official documentation
+- Doubao API integration guidelines
+"""
+
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load environment variables once during module initialization
+load_dotenv()
+
+# Retrieve configuration from environment variables (executes once)
+_API_KEY = os.getenv('ARK_API_KEY')
+_MODEL_IN_USE = os.getenv('MODEL_IN_USE')
+
+# Validate essential configuration (runs once at import)
+if not _API_KEY:
+    raise ValueError("API key not found in .env file. Please check your configuration.")
+if not _MODEL_IN_USE:
+    raise ValueError("MODEL_IN_USE not found in .env file. Please check your configuration.")
+
+# Initialize API client (single instance reused across all requests)
+_CLIENT = OpenAI(
+    base_url="https://ark.cn-beijing.volces.com/api/v3",
+    api_key=_API_KEY,
+)
+
+def translate_text(prompt, temperature=0.1, top_p=0.9, max_tokens=4096):
+    """
+    Translates text using Doubao's large language model.
+    
+    Uses the pre-initialized API client for efficient reuse across multiple requests.
+    
+    Args:
+        prompt (str): Text to translate or translation instruction
+        temperature (float, optional): Controls randomness (0-1). Lower = more deterministic. Defaults to 0.1.
+        top_p (float, optional): Nucleus sampling parameter (0-1). Defaults to 0.9.
+        max_tokens (int, optional): Maximum tokens for generated response. Defaults to 4096.
+        
+    Returns:
+        str: Translated text content
+    """
+    completion = _CLIENT.chat.completions.create(
+        model=_MODEL_IN_USE,
+        messages=[
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": prompt}]
+            }
+        ],
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens
+    )
+    
+    return completion.choices[0].message.content
+
+# Example usage when run directly
+if __name__ == "__main__":
+    test_prompt = "Translate to French: how much of this pencil?"
+    print(translate_text(test_prompt))
+
+
+
+          
